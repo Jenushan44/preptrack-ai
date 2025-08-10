@@ -1,5 +1,6 @@
 import Sidebar from "@/components/Sidebar";
 import "../globals.css";
+import TaskList from "@/components/TaskList";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
