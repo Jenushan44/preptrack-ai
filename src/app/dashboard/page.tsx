@@ -1,4 +1,5 @@
 
+import AISchedule from '../../components/AISchedule';
 import TaskList from '../../components/TaskList';
 
 export default function DashboardPage() {
@@ -7,6 +8,7 @@ export default function DashboardPage() {
       <h2 className="text-gray-800 text-2xl font-semibold">Dashboard section</h2>
       <p className="text-gray-700 mt-2">Example text</p>
       <TaskList />
+      <AISchedule />
     </div>
   );
 }
