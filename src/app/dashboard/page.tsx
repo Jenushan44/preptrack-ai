@@ -1,4 +1,5 @@
 
+import ProgressTracker from '@/components/ProgressTracker';
 import AISchedule from '../../components/AISchedule';
 import TaskList from '../../components/TaskList';
 
@@ -9,6 +10,7 @@ export default function DashboardPage() {
       <p className="text-gray-700 mt-2">Example text</p>
       <TaskList />
       <AISchedule />
+      <ProgressTracker />
     </div>
   );
 }
