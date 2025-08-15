@@ -2,25 +2,31 @@ import { db } from "../../firebase/firebaseConfig";
 import {
   addDoc,
   collection,
-  serverTimestamp,
   onSnapshot,
-  query,
   orderBy,
-} from "firebase/firestore"
+  query,
+  serverTimestamp,
+  Timestamp,
+  type DocumentData,
+} from "firebase/firestore";
+import type { Task } from "../../types/task";
 
-export type Priority = "Low" | "Medium" | "High"; // Priority can only be 1 of 3 values
-export type TaskType = "Study" | "Fitness" | "Other"
+export function docToTask(id: string, data: unknown): Task {
+  const d = data as DocumentData;
 
-export type Task = { // Defines Task object and checks if all required fields are present
-  id: string;
-  name: string;
-  type: TaskType;
-  priority: Priority;
-  estimatedMin: number;
-  completed: boolean;
-  createdAt?: any;
-  updatedAt?: any;
-};
+  const createdAt: Date =
+    d?.createdAt instanceof Timestamp ? d.createdAt.toDate() : new Date();
+
+  return {
+    id,
+    name: String(d?.name ?? ""),
+    category: String(d?.category ?? "Other"),
+    priority: (d?.priority as 1 | 2 | 3) ?? 2,
+    estMinutes: Number(d?.estMinutes ?? 30),
+    createdAt,
+    status: (d?.status as "pending" | "done") ?? "pending",
+  };
+}
 
 /* 
 createTask adds a new task to Firestore under a specific user's account.
@@ -39,16 +45,24 @@ export async function createTask(
   uid: string,
   // data includes only the fields that the user can set
   // "id", "createdAt" and "updatedAt" are removed because Firestore generates them
-  data: Omit<Task, "id" | "createdAt" | "updatedAt">
-) {
-
-  const ref = collection(db, "users", uid, "tasks"); // Firestore function collection gives a reference to specific data in the database 
+  data: {
+    name: string;
+    category: string;
+    priority: 1 | 2 | 3;
+    estMinutes: number;
+    status?: "pending" | "done";
+  }
+): Promise<void> {
   // creates new document in collection with a unique ID 
   // await used since Firestore writes take time
+  const ref = collection(db, "users", uid, "tasks");
   await addDoc(ref, {
-    ...data, // spreads all the user fields into the document 
+    name: data.name,
+    category: data.category,
+    priority: data.priority,
+    estMinutes: data.estMinutes,
+    status: data.status ?? "pending",
     createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
   });
 
 }
@@ -75,10 +89,7 @@ export function subscribeTasks(
   const tasksQuery = query(tasksRef, orderBy("createdAt", "desc")); // Orders tasks by createdAt in descending order
 
   return onSnapshot(tasksQuery, (snapshot) => {
-    const tasksList = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as Omit<Task, "id">),
-    }));
+    const tasksList = snapshot.docs.map((doc) => docToTask(doc.id, doc.data()));
     tasksUpdate(tasksList);
   });
 }
