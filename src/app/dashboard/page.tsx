@@ -1,7 +1,7 @@
 
 import ProgressTracker from '@/components/ProgressTracker';
-import AISchedule from '../../components/AISchedule';
-import TaskList from '../../components/TaskList';
+import AISchedule from '@/components/AISchedule';
+import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 
 export default function DashboardPage() {

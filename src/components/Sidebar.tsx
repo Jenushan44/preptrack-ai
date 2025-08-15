@@ -3,7 +3,7 @@
 export default function Sidebar() {
   return (
     <div className="h-screen w-64 bg-gradient-to-b from-[#0F172A] to-[#1E293B] text-white flex flex-col p-6 space-y-6 sticky top-0 flex-shrink-0">
-      <h1 className="text-2x1 font-bold">PrepTrack AI</h1>
+      <h1 className="text-2xl font-bold">PrepTrack AI</h1>
 
       <nav className="flex flex-col space-y-4">
 
