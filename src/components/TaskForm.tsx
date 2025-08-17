@@ -1,25 +1,82 @@
-"use client"
-import { useState } from "react"; // Allows components to remember values between renders
+"use client";
+
+import { useState } from "react";
+import { db } from "../../firebase/firebaseConfig"; // connection to Firestore database 
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 export default function TaskForm({ uid }: { uid: string }) {
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [priority, setPriority] = useState("Medium");
+  const [estMinutes, setEstMinutes] = useState<number | "">(""); // Input can be empty 
+  const [saving, setSaving] = useState(false);
 
-
-  // Function runs when the form is submitted 
-  // React.FormEvent tells TypeScript that this is a form submit event 
-  // and to only provide form-related methods
-
-  function onSubmit(event: React.FormEvent) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!name.trim()) return; // Doesn't allow empty tasks 
+    setSaving(true); // Shows "Saving..." on the button 
+
+    await addDoc(collection(db, "users", uid, "tasks"), {
+      name: name.trim(),
+      category: category || "General", // Sets category to General if empty 
+      priority,
+      estMinutes: estMinutes === "" ? null : Number(estMinutes),
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+
+    // Reset all input fields for next task 
+    setName("");
+    setCategory("");
+    setPriority("Medium");
+    setEstMinutes("");
+
+    setSaving(false);
   }
+
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border bg-white shadow-sm space-y-4 p-5">
-      <h2 className="text-gray-800 text-lg font-semibold">Add a Task</h2>
+    <form onSubmit={onSubmit} className="rounded-2xl border space-y-4 bg-white shadow-sm p-5">
+      <h2 className="text-gray-800 font-semibold text-lg">Add a Task</h2>
 
-      <input className="border w-full rounded py-2 px-3 text-gray-800" placeholder="Task name" value={name} onChange={(event) => setName(event.target.value)}></input>
+      <input
+        className="border w-full rounded py-2 px-3 text-gray-800"
+        placeholder="Task name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
-      <button className="bg-gray-400 text-white px-4 rounded py-2">
-        Add Task
+      <input
+        className="border w-full rounded py-2 text-gray-800 px-3"
+        placeholder="Category (e.g., Study, Work)"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+      />
+
+      <select
+        className="border w-full rounded py-2 px-3 text-gray-800"
+        value={priority}
+        onChange={(e) => setPriority(e.target.value)}
+      >
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+      </select>
+
+      <input
+        className="border w-full rounded py-2 px-3 text-gray-800"
+        type="number"
+        min={5}
+        step={5}
+        placeholder="Estimated minutes (e.g., 30)"
+        value={estMinutes}
+        onChange={(e) => {
+          const v = e.target.value; // Set to user input
+          setEstMinutes(v === "" ? "" : Number(v));
+        }}
+      />
+      {/*Disables button while saving or when name input is empty */}
+      <button className="bg-gray-500 rounded text-white px-4 py-2" disabled={saving || !name.trim()}>
+        {saving ? "Saving..." : "Add Task"}
       </button>
     </form>
   );
