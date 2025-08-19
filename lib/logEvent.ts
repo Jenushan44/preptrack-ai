@@ -1,4 +1,4 @@
-import { db } from "../../firebase/firebaseConfig"
+import { db } from "../firebase/firebaseConfig"
 import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 
 //Only allows these strings to be passed when logging an event
