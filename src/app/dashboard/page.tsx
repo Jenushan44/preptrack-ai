@@ -4,6 +4,7 @@ import TaskForm from "@/components/TaskForm";
 import TaskList from "@/components/TaskList";
 import ProgressTracker from "@/components/ProgressTracker";
 import AISchedule from "@/components/AISchedule";
+import PrefForm from "@/components/PrefForm";
 
 export default function DashboardPage() {
   const uid = "demo-user";
@@ -24,6 +25,7 @@ export default function DashboardPage() {
 
       <AISchedule />
       <ProgressTracker />
+      <PrefForm uid={uid} />
     </div>
   );
 }
