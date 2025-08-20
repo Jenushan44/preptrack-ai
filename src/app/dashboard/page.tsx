@@ -23,7 +23,7 @@ export default function DashboardPage() {
         <TaskList uid={uid} />
       </div>
 
-      <AISchedule />
+      <AISchedule uid={uid} />
       <ProgressTracker />
       <PrefForm uid={uid} />
     </div>
