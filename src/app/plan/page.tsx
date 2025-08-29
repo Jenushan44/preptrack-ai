@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { db } from "../../../firebase/firebaseConfig";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 export default function PlanPage() {
   const [goalTitle, setGoalTitle] = useState(""); // user types
@@ -16,18 +18,34 @@ export default function PlanPage() {
     setError(null);
     setResult(null);
     try {
-      const result = await fetch("/api/goals/llm-plan", {
+      const res = await fetch("/api/goals/llm-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, goalId, goalTitle, constraints }),
       });
-      if (!result.ok) throw new Error(await result.text());
-      const json = await result.json();
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      await saveTasksFirestore(uid, goalId, json.tasks);
       setResult(json);
     } catch (error: any) {
       setError(error?.message || "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function saveTasksFirestore(uid: string, goalId: string, tasks: any[]) {
+    const tasksCollection = collection(db, "users", uid, "tasks");
+    for (const t of tasks) {
+      await addDoc(tasksCollection, {
+        goalId,
+        name: t.name,
+        category: t.category,
+        priority: t.priority,
+        estMinutes: t.estMinutes,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
     }
   }
 
@@ -56,12 +74,12 @@ export default function PlanPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-3">
-            <summary className="cursor-pointer">Raw JSON</summary>
-            <code className="bg-gray-100 p-2 rounded mt-2">
+          <details className="mt-3">
+            <summary className="cursor-pointer">JSON</summary>
+            <div className="whitespace-pre bg-gray-100 p-2 rounded mt-2">
               {JSON.stringify(result, null, 2)}
-            </code>
-          </div>
+            </div>
+          </details>
         </div>
       )}
     </div>
