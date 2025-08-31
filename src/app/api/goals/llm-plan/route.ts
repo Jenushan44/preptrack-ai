@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const goalConstraints = body?.constraints ?? "none";
 
 
-    if (!userId || !goalId || !goalTitle) { // Sends error message if required information is missing
+    if (!userId) { // Sends error message if required information is missing
       return new Response("Missing uid, goalId, or goalTitle", { status: 400 });
     }
 

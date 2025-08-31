@@ -27,7 +27,7 @@ type Block = {
   source: "ai";
 };
 
-export default function AISchedule({ uid }: { uid: string }) {
+export default function AISchedule({ uid, trigger }: { uid: string; trigger?: number }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [prefs, setPrefs] = useState<Prefs>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -88,6 +88,12 @@ export default function AISchedule({ uid }: { uid: string }) {
     loadPref();
   }, [uid]);
 
+  useEffect(() => {
+    if (typeof trigger === "number" && trigger > 0) {
+      generatePlan();
+    }
+  }, [trigger]);
+
   async function generatePlan() {
     if (!prefs) {
       alert("Please set your scheduling preferences first.");
@@ -96,26 +102,59 @@ export default function AISchedule({ uid }: { uid: string }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/schedule/generate", {
+      const res = await fetch("/api/goals/llm-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          uid,
           tasks: tasksForApi(tasks),
           prefs: prefsForApi(prefs),
           today: currentDate(),
         }),
       });
-      const data = await res.json();
-      setBlocks(Array.isArray(data.blocks) ? data.blocks : []);
-    }
-    catch (e) {
-      console.error(e);
 
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API ${res.status}: ${text.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      console.log("AI response:", data);
+      const aiTasks: any[] =
+        Array.isArray(data.tasks) && data.tasks.length > 0
+          ? data.tasks
+          : tasksForApi(tasks);
+      const startTime = prefsForApi(prefs).startTime || "09:00";
+      const startStr = `${currentDate()}T${startTime}:00`;
+      let cursor = new Date(startStr);
+
+      const producedBlocks: Block[] = aiTasks.map((t: any): Block => {
+        const minutes = Number.isFinite(t?.estMinutes) ? t.estMinutes : 30;
+
+        const startISO = cursor.toISOString();
+        const end = new Date(cursor);
+        end.setMinutes(end.getMinutes() + minutes);
+        const endISO = end.toISOString();
+        cursor = end;
+        const id = t.id ?? t.taskId ?? crypto.randomUUID?.() ?? Math.random().toString();
+
+        return {
+          taskId: String(id),
+          scheduledStart: startISO,
+          scheduledEnd: endISO,
+          source: "ai",
+        };
+      });
+
+      setBlocks(producedBlocks);
+    } catch (e) {
+      console.error(e);
       alert("Failed to generate plan.");
     } finally {
       setLoading(false);
     }
   }
+
+
 
   async function acceptPlan() {
     if (!blocks.length) return;
@@ -143,15 +182,14 @@ export default function AISchedule({ uid }: { uid: string }) {
   }
 
   return (
-    <div className="rounded-2xl border bg-white shadow-sm p-5 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800">AI Schedule</h2>
+    <div className="rounded-xl border border-gray-700 bg-white p-5 shadow space-y-4">
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={generatePlan}
 
           disabled={loading}
-          className="rounded px-3 py-2 bg-gray-800 text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-60"
+          className="bg-gray-800 px-4 text-white py-2 rounded"
         >
           {loading ? "Generating..." : "Generate Plan"}
         </button>
@@ -159,50 +197,49 @@ export default function AISchedule({ uid }: { uid: string }) {
         {blocks.length > 0 && (
           <button
             onClick={acceptPlan}
-            className="rounded px-3 py-2 bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
-          >
+            className="rounded px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 shadow">
             Accept Plan ({blocks.length})
           </button>
         )}
       </div>
 
-      {blocks.length === 0 ? (
+      {
+        blocks.length === 0 ? (
 
-        <p className="text-sm text-gray-600">
-          Click “Generate Plan
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {blocks.map((b) => {
-            const taskItem = tasks.find((matchingTask) => matchingTask.id === b.taskId);
+          <p className="text-gray-700 mb-1 text-sm block">Click “Generate Plan”.</p>
+        ) : (
+          <ul className="space-y-2">
+            {blocks.map((b) => {
+              const taskItem = tasks.find((matchingTask) => matchingTask.id === b.taskId);
 
-            const label = taskItem?.name || "(unknown task)";
-            const start = new Date(b.scheduledStart).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            const end = new Date(b.scheduledEnd).toLocaleTimeString([], {
-              hour: "2-digit",
+              const label = taskItem?.name || "(unknown task)";
+              const start = new Date(b.scheduledStart).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const end = new Date(b.scheduledEnd).toLocaleTimeString([], {
+                hour: "2-digit",
 
-              minute: "2-digit",
-            });
+                minute: "2-digit",
+              });
 
-            return (
-              <li key={b.taskId} className="border rounded p-3">
-                <div className="font-medium">{label}</div>
-                <div className="text-xs text-gray-600">
-                  {start} – {end} | source: {b.source}
-                </div>
-              </li>
-            );
-          })}
+              return (
+                <li key={b.taskId} className="rounded-lg border border-gray-700 bg-gray-900 p-3">
+                  <div className="font-medium text-gray-100">{label}</div>
+                  <div className="text-xs text-gray-300">
+                    {start} – {end} | source: {b.source}
+                  </div>
+                </li>
+              );
+            })}
 
-        </ul>
-      )}
-
+          </ul>
+        )
+      }
 
 
-    </div>
+
+    </div >
 
   );
 }

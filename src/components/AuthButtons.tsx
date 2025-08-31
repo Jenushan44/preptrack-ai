@@ -1,29 +1,38 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { auth, provider } from '../../firebase/firebaseConfig';
+"use client";
+
+import { useState, useEffect } from "react";
+import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { auth, provider } from "../../firebase/firebaseConfig";
 
 export default function AuthButtons() {
-
-  const [user, setUser] = useState<User | null>(null) // Either user is logged in or no one is
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => { setUser(user); }); // Tracks login/logout and updates state 
-    return () => unsubscribe();
-  }, [])
+    return onAuthStateChanged(auth, (u) => setUser(u));
+  }, []);
 
-  return (
+  async function handleLogin() {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  }
 
+  async function handleLogout() {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
+
+  return user ? (
     <div>
-      {user ? (
-        <div>
-          <p> Welcome {user.displayName} </p>
-          <button onClick={() => signOut(auth)}> Sign out</button>
-        </div>
-      ) : (
-        <button onClick={() => signInWithPopup(auth, provider)}>Sign in with Google</button>
-      )}
+      <span>{user.displayName || user.email}</span>
+      <button onClick={handleLogout}>Logout</button>
     </div>
-
+  ) : (
+    <button onClick={handleLogin}>Login with Google</button>
   );
 }

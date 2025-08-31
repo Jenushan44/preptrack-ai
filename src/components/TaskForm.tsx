@@ -33,51 +33,36 @@ export default function TaskForm({ uid }: { uid: string }) {
 
     setSaving(false);
   }
-
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border space-y-4 bg-white shadow-sm p-5">
-      <h2 className="text-gray-800 font-semibold text-lg">Add a Task</h2>
+    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow">
+      <input className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-800" placeholder="Task name" value={name} onChange={(e) => setName(e.target.value)} />
 
-      <input
-        className="border w-full rounded py-2 px-3 text-gray-800"
-        placeholder="Task name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <input className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-800" placeholder="Category (e.g., Study, Work)" value={category} onChange={(e) => setCategory(e.target.value)} />
 
-      <input
-        className="border w-full rounded py-2 text-gray-800 px-3"
-        placeholder="Category (e.g., Study, Work)"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      />
-
-      <select
-        className="border w-full rounded py-2 px-3 text-gray-800"
-        value={priority}
-        onChange={(e) => setPriority(e.target.value)}
-      >
+      <select className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-800 focus:border-blue-500" value={priority} onChange={(e) => setPriority(e.target.value)}>
         <option>Low</option>
         <option>Medium</option>
         <option>High</option>
       </select>
 
       <input
-        className="border w-full rounded py-2 px-3 text-gray-800"
-        type="number"
+        className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-gray-800"
         min={5}
         step={5}
         placeholder="Estimated minutes (e.g., 30)"
         value={estMinutes}
         onChange={(e) => {
-          const v = e.target.value; // Set to user input
+          const v = e.target.value;
           setEstMinutes(v === "" ? "" : Number(v));
         }}
       />
-      {/*Disables button while saving or when name input is empty */}
-      <button className="bg-gray-500 rounded text-white px-4 py-2" disabled={saving || !name.trim()}>
+
+      <button
+        className="bg-gray-800 px-4 text-white py-2 rounded"
+        disabled={saving || !name.trim()}
+      >
         {saving ? "Saving..." : "Add Task"}
       </button>
-    </form>
+    </form >
   );
 }

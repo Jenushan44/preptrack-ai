@@ -15,7 +15,7 @@ type Task = {
   dueAt?: Timestamp | null;
 };
 
-export default function TaskList({ uid }: { uid: string }) {
+export default function TaskList({ uid, onRegenerate }: { uid: string; onRegenerate?: () => void }) {
   const [tasks, setTasks] = useState<Task[]>([]); // Used to hold all tasks read from Firestore 
   const [editingId, setEditingId] = useState<string | null>(null); // Task being edited 
   const [editName, setEditName] = useState("");
@@ -23,7 +23,7 @@ export default function TaskList({ uid }: { uid: string }) {
   const [editPriority, setEditPriority] = useState<"Low" | "Medium" | "High">("Medium");
   const [editMinutes, setEditMinutes] = useState("");
   const [editDueAt, setEditDueAt] = useState("");
-
+  const visibleTasks = tasks.filter((t) => t.status !== "completed");
 
   useEffect(() => {
     const tasksRef = collection(db, "users", uid, "tasks"); // Points to users/{uid}/tasks 
@@ -40,7 +40,7 @@ export default function TaskList({ uid }: { uid: string }) {
     return stopListening;
   }, [uid]);
 
-  if (tasks.length === 0) {
+  if (visibleTasks.length === 0) {
     return (
       <div>
         <div className="mb-3">
@@ -97,11 +97,14 @@ export default function TaskList({ uid }: { uid: string }) {
     await logEvent(uid, "complete", { taskId: id, details: "Marked complete from TaskList" }); // Logs the event
   }
 
-  function reschedule(id: string) {
-    logEvent(uid, "reschedule", { taskId: id, details: "Requested reschedule" });
+  async function reschedule(id: string) {
+    const ref = doc(db, "users", uid, "tasks", id);
+    await updateDoc(ref, { status: "pending", scheduledStart: null, scheduledEnd: null, scheduleSource: null, });
+    await logEvent(uid, "reschedule", { taskId: id, details: "Requested reschedule" });
   }
 
   function regenPlan() {
+    onRegenerate?.();
     logEvent(uid, "regenerate", { details: "Regenerate plan clicked" });
   }
 
@@ -113,8 +116,8 @@ export default function TaskList({ uid }: { uid: string }) {
       </div>
 
       <ul className="space-y-2">
-        {tasks.map((t) => (
-          <li key={t.id} className="border rounded-xl p-3">
+        {visibleTasks.map((t) => (
+          <li key={t.id} className="border border-gray-200 bg-white rounded-xl p-3 shadow-sm">
             <div className="flex justify-between items-center">
               {editingId === t.id ? (
                 <div className="flex items-center justify-between w-full">
@@ -165,7 +168,7 @@ export default function TaskList({ uid }: { uid: string }) {
                 </div>
               ) : (
                 <div className="flex justify-between items-center w-full">
-                  <span className="font-medium text-gray-500">{t.name}</span> {/*Wrap task name in span to only apply styling to name*/}
+                  <span className="font-semibold text-gray-800">{t.name}</span> {/*Wrap task name in span to only apply styling to name*/}
                   <div className="flex items-center gap-3">
                     <button onClick={() => markComplete(t.id)} className="text-green-600">Complete</button>
                     <button onClick={() => reschedule(t.id)} className="text-blue-600">Reschedule</button>
@@ -175,7 +178,7 @@ export default function TaskList({ uid }: { uid: string }) {
                 </div>
               )}
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-500">
               {(t.category || "General")} | {(t.priority || "Medium")}
               {t.estMinutes ? ` | ${t.estMinutes} min` : ""}
             </div>

@@ -46,7 +46,6 @@ export default function PrefForm({ uid }: { uid: string }) {
 
   return (
     <form onSubmit={onSave} className="rounded-2xl border bg-white space-y-4 p-5 shadow-sm">
-      <h2 className="text-gray-800 text-lg font-semibold">Scheduling Preferences</h2>
 
       <div>
         <label className="text-gray-700 mb-1 text-sm block">Start time</label>

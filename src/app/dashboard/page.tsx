@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import TaskForm from "@/components/TaskForm";
 import TaskList from "@/components/TaskList";
 import ProgressTracker from "@/components/ProgressTracker";
@@ -8,24 +8,33 @@ import PrefForm from "@/components/PrefForm";
 
 export default function DashboardPage() {
   const uid = "demo-user";
+  const [scheduleTrigger, setScheduleTrigger] = useState(0);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-gray-800 text-2xl font-semibold">Dashboard section</h2>
-        <p className="text-gray-700 mt-2">Example text</p>
+        <h2 className="text-2xl font-semibold text-slate-800">Dashboard</h2>
+        <p className="mt-1 text-sm text-slate-400">Plan, track, and tune your study/work sessions.</p>
       </div>
-
-      <TaskForm uid={uid} />
-
-      <div className="rounded-2xl border bg-white shadow-sm p-5">
-        <h3 className="text-gray-800 mb-3 text-lg font-semibold">Your Tasks</h3>
-        <TaskList uid={uid} />
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-5 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-white">Add a Task</h3>
+        <TaskForm uid={uid} />
       </div>
-
-      <AISchedule uid={uid} />
-      <ProgressTracker />
-      <PrefForm uid={uid} />
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-5 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-white">Your Tasks</h3>
+        <TaskList uid={uid} onRegenerate={() => setScheduleTrigger((n) => n + 1)} />      </div>
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-5 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-white">AI Schedule</h3>
+        <AISchedule uid={uid} trigger={scheduleTrigger} />
+      </div>
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-5 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-white">Progress</h3>
+        <ProgressTracker />
+      </div>
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-5 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-white">Scheduling Preferences</h3>
+        <PrefForm uid={uid} />
+      </div>
     </div>
   );
 }
