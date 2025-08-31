@@ -1,5 +1,3 @@
-goalId,name,category,priority,estMinutes
-undefined,Finish tutorial,Study,Medium,45
-undefined,Test Task C,Gym,Low,15
-undefined,Test Task B,Work,Medium,45
-undefined,Test Task A,Study,High,30
+goalId,name,category,priority,estMinutes,completed_on_time
+goal-001,Read Chapter 1,Study,High,30,1
+goal-002,Practice arrays,Practice,Medium,20,0

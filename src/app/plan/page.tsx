@@ -9,7 +9,8 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false); //shows spinner while waiting
   const [error, setError] = useState<string | null>(null); // shows an error messageif something fails
   const [result, setResult] = useState<{ goalId: string; tasks: any[] } | null>(null); // holds response from api
-
+  const ML_BASE = "http://127.0.0.1:8000";
+  const [probs, setProbs] = useState<number[] | null>(null);
   const uid = "user123";
   const goalId = "goal-001";
 
@@ -17,6 +18,7 @@ export default function PlanPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setProbs(null);
     try {
       const res = await fetch("/api/goals/llm-plan", {
         method: "POST",
@@ -27,6 +29,22 @@ export default function PlanPage() {
       const json = await res.json();
       await saveTasksFirestore(uid, goalId, json.tasks);
       setResult(json);
+      const payload = json.tasks.map((t: any) => ({
+        category: t.category,
+        priority: t.priority,
+        estMinutes: t.estMinutes,
+      }));
+
+      const mlRes = await fetch(`${ML_BASE}/predict-batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!mlRes.ok) throw new Error(await mlRes.text());
+      const mlJson = await mlRes.json();
+      setProbs(mlJson.p);
+
     } catch (error: any) {
       setError(error?.message || "Something went wrong");
     } finally {
@@ -49,6 +67,14 @@ export default function PlanPage() {
     }
   }
 
+  function Badge({ p }: { p?: number }) {
+    if (p == null) return null;
+    if (p >= 0.67) return <span className="ml-2 rounded bg-green-100 text-green-800 text-xs px-2 py-0.5">Likely</span>;
+    if (p >= 0.33) return <span className="ml-2 rounded bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5">50–50</span>;
+    return <span className="ml-2 rounded bg-red-100 text-red-800 text-xs px-2 py-0.5">Tough</span>;
+  }
+
+
   return (
     <div className="max-w-xl mx-auto mt-10 p-4">
       <h1 className="text-2xl font-bold mb-4">Generate Plan</h1>
@@ -68,6 +94,7 @@ export default function PlanPage() {
             {result.tasks.map((t: any, i: number) => (
               <li key={i} className="mb-2">
                 <strong>{t.name}</strong>
+                <Badge p={probs?.[i]} />
                 <div className="text-sm text-gray-600">
                   Category: {t.category} | Priority: {t.priority} | Est: {t.estMinutes} mins
                 </div>
